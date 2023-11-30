@@ -1,4 +1,5 @@
 mod config;
+mod test_exec;
 
 use anyhow::Result;
 use clap::Parser;
@@ -6,6 +7,7 @@ use clap::Subcommand;
 
 use config::load_config;
 use std::path::PathBuf;
+use test_exec::test_all;
 
 #[derive(Parser)]
 struct Args {
@@ -34,7 +36,7 @@ fn main() -> Result<()> {
         Subcommands::TestAll {
             in_folder,
             out_folder,
-        } => println!("{:?} {:?}", in_folder, out_folder),
+        } => test_all(&config.exec_config, in_folder, out_folder)?,
     };
 
     Ok(())

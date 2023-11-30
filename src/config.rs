@@ -8,7 +8,7 @@ use std::path::PathBuf;
 #[derive(Debug, Default, Deserialize)]
 pub struct Config {
     #[serde(default)]
-    exec_config: ExecConfig,
+    pub exec_config: ExecConfig,
 }
 
 #[derive(Debug, Deserialize)]
