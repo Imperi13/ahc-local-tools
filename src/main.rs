@@ -28,6 +28,8 @@ fn main() -> Result<()> {
     let args = Args::parse();
     let config = load_config(args.config_file)?;
 
+    println!("{:?}", config);
+
     match args.subcommand {
         Subcommands::TestAll {
             in_folder,
