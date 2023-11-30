@@ -27,6 +27,7 @@ enum Subcommands {
 fn main() -> Result<()> {
     let args = Args::parse();
     let config = load_config(args.config_file)?;
+
     match args.subcommand {
         Subcommands::TestAll {
             in_folder,
