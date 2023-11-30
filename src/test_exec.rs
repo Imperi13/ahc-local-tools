@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Context, Result};
+use indicatif::ParallelProgressIterator;
 use rayon::{prelude::*, ThreadPoolBuilder};
 use regex::Regex;
 use walkdir::WalkDir;
@@ -27,8 +28,11 @@ pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBu
         files.sort_by(|a, b| a.path().cmp(b.path()));
 
         let ps = files
-            .into_par_iter()
-            .map(|entry| test_single_case(exec_config, entry.into_path(), &out_folder, &re));
+            .par_iter()
+            .progress_count(files.len() as u64)
+            .map(|entry| {
+                test_single_case(exec_config, entry.clone().into_path(), &out_folder, &re)
+            });
         ps.collect::<Vec<Result<(PathBuf, i64)>>>()
     });
 
@@ -94,7 +98,7 @@ fn test_single_case(
     match score_regex.captures(&stderr_str) {
         Some(caps) => {
             let score = (&caps[1]).parse().unwrap();
-            Ok((in_file, score))
+            Ok((in_file.clone(), score))
         }
         None => Err(anyhow!(
             "could not capture score_regex `{}`",
