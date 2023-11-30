@@ -14,25 +14,33 @@ pub struct Config {
 #[derive(Debug, Deserialize)]
 pub struct ExecConfig {
     #[serde(default = "default_tester_cmd")]
-    tester_cmd: Vec<String>,
+    pub tester_cmd: String,
+
+    #[serde(default)]
+    pub tester_arg: Vec<String>,
 
     #[serde(default = "default_solver_cmd")]
-    solver_cmd: Vec<String>,
+    pub solver_cmd: String,
+
+    #[serde(default)]
+    pub solver_arg: Vec<String>,
 }
 
-fn default_tester_cmd() -> Vec<String> {
-    vec!["./tools/target/release/tester".to_string()]
+fn default_tester_cmd() -> String {
+    "./tools/target/release/tester".to_string()
 }
 
-fn default_solver_cmd() -> Vec<String> {
-    vec!["./a.out".to_string()]
+fn default_solver_cmd() -> String {
+    "./a.out".to_string()
 }
 
 impl Default for ExecConfig {
     fn default() -> Self {
         ExecConfig {
             tester_cmd: default_tester_cmd(),
+            tester_arg: Vec::default(),
             solver_cmd: default_solver_cmd(),
+            solver_arg: Vec::default(),
         }
     }
 }

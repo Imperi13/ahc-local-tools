@@ -10,3 +10,5 @@ anyhow = "1.0"
 toml = "0.8.8"
 clap = { version = "4.4.10", features = ["derive"] }
 serde = { version = "1.0.193", features = ["derive"] }
+rayon = "1.8.0"
+walkdir = "2.4.0"
