@@ -12,3 +12,4 @@ clap = { version = "4.4.10", features = ["derive"] }
 serde = { version = "1.0.193", features = ["derive"] }
 rayon = "1.8.0"
 walkdir = "2.4.0"
+regex = "1.7.0"

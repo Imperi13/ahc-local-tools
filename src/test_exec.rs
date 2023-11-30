@@ -1,5 +1,6 @@
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use rayon::{prelude::*, ThreadPoolBuilder};
+use regex::Regex;
 use walkdir::WalkDir;
 
 use crate::config::ExecConfig;
@@ -13,6 +14,9 @@ pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBu
         .build()
         .with_context(|| format!("could not build thread pool"))?;
 
+    let re =
+        Regex::new(r"Score = (\d+)").with_context(|| format!("could not build regex instance"))?;
+
     th_pool.install(|| {
         let files = WalkDir::new(in_folder.clone())
             .into_iter()
@@ -20,10 +24,9 @@ pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBu
             .filter(|e| e.file_type().is_file())
             .collect::<Vec<_>>();
 
-        println!("{:?}", files);
         let ps = files
             .into_par_iter()
-            .map(|entry| test_single_case(exec_config, entry.into_path(), &out_folder));
+            .map(|entry| test_single_case(exec_config, entry.into_path(), &out_folder, &re));
         let result = ps.collect::<Vec<Result<(PathBuf, i64)>>>();
 
         println!("{:?}", result);
@@ -35,6 +38,7 @@ fn test_single_case(
     exec_config: &ExecConfig,
     in_file: PathBuf,
     out_folder: &PathBuf,
+    score_regex: &Regex,
 ) -> Result<(PathBuf, i64)> {
     let filename = in_file
         .file_name()
@@ -64,6 +68,16 @@ fn test_single_case(
         .output()
         .with_context(|| format!("could not execute command"))?;
 
-    println!("{:?}", output);
-    Ok((in_file, 0))
+    let stderr_str = String::from_utf8_lossy(&output.stderr);
+    match score_regex.captures(&stderr_str) {
+        Some(caps) => {
+            let score = (&caps[1]).parse().unwrap();
+            println!("{} : {}", in_file.to_str().unwrap(), score);
+            Ok((in_file, score))
+        }
+        None => Err(anyhow!(
+            "could not capture score_regex `{}`",
+            in_file.to_str().unwrap()
+        )),
+    }
 }
