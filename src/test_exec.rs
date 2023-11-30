@@ -17,20 +17,42 @@ pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBu
     let re =
         Regex::new(r"Score = (\d+)").with_context(|| format!("could not build regex instance"))?;
 
-    th_pool.install(|| {
-        let files = WalkDir::new(in_folder.clone())
+    let results = th_pool.install(|| {
+        let mut files = WalkDir::new(in_folder.clone())
             .into_iter()
             .filter_map(|e| e.ok())
             .filter(|e| e.file_type().is_file())
             .collect::<Vec<_>>();
 
+        files.sort_by(|a, b| a.path().cmp(b.path()));
+
         let ps = files
             .into_par_iter()
             .map(|entry| test_single_case(exec_config, entry.into_path(), &out_folder, &re));
-        let result = ps.collect::<Vec<Result<(PathBuf, i64)>>>();
-
-        println!("{:?}", result);
+        ps.collect::<Vec<Result<(PathBuf, i64)>>>()
     });
+
+    println!("---------result-----------");
+
+    let mut results = results
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()
+        .with_context(|| format!("failed in some case"))?;
+
+    results.sort_by(|a, b| (a.0).cmp(&(b.0)));
+
+    let mut score_sum = 0;
+
+    for (input_path, score) in results.iter() {
+        score_sum += score;
+        println!("{} : {}", input_path.to_str().unwrap(), score);
+    }
+
+    println!("score sum : {}", score_sum);
+    println!(
+        "score ave : {}",
+        (score_sum as f64) / (results.len() as f64)
+    );
     Ok(())
 }
 
@@ -72,7 +94,6 @@ fn test_single_case(
     match score_regex.captures(&stderr_str) {
         Some(caps) => {
             let score = (&caps[1]).parse().unwrap();
-            println!("{} : {}", in_file.to_str().unwrap(), score);
             Ok((in_file, score))
         }
         None => Err(anyhow!(
