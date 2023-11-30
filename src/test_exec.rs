@@ -1,5 +1,5 @@
 use anyhow::{anyhow, Context, Result};
-use indicatif::ParallelProgressIterator;
+use indicatif::{ParallelProgressIterator, ProgressBar, ProgressStyle};
 use rayon::{prelude::*, ThreadPoolBuilder};
 use regex::Regex;
 use walkdir::WalkDir;
@@ -27,9 +27,14 @@ pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBu
 
         files.sort_by(|a, b| a.path().cmp(b.path()));
 
+        let pb = ProgressBar::new(files.len() as u64);
+        pb.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} cases ({eta})  ")
+            .unwrap()
+            .progress_chars("#>-"));
+
         let ps = files
             .par_iter()
-            .progress_count(files.len() as u64)
+            .progress_with(pb)
             .map(|entry| {
                 test_single_case(exec_config, entry.clone().into_path(), &out_folder, &re)
             });
