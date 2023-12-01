@@ -8,7 +8,24 @@ use std::path::PathBuf;
 #[derive(Debug, Default, Deserialize)]
 pub struct Config {
     #[serde(default)]
+    pub problem_config: ProblemConfig,
+
+    #[serde(default)]
     pub exec_config: ExecConfig,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ProblemConfig {
+    #[serde(default)]
+    pub parameter_names: Vec<String>,
+}
+
+impl Default for ProblemConfig {
+    fn default() -> Self {
+        ProblemConfig {
+            parameter_names: Vec::default(),
+        }
+    }
 }
 
 #[derive(Debug, Deserialize)]
