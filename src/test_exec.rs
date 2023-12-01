@@ -10,43 +10,21 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBuf) -> Result<()> {
-    let th_pool = ThreadPoolBuilder::new()
-        .num_threads(4)
-        .build()
-        .with_context(|| format!("could not build thread pool"))?;
-
     let re =
         Regex::new(r"Score = (\d+)").with_context(|| format!("could not build regex instance"))?;
 
-    let results = th_pool.install(|| {
-        let mut files = WalkDir::new(in_folder.clone())
-            .into_iter()
-            .filter_map(|e| e.ok())
-            .filter(|e| e.file_type().is_file())
-            .collect::<Vec<_>>();
+    let mut in_files = WalkDir::new(in_folder.clone())
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .map(|e| e.into_path())
+        .filter(|e| e.is_file())
+        .collect::<Vec<_>>();
 
-        files.sort_by(|a, b| a.path().cmp(b.path()));
+    in_files.sort_by(|a, b| a.cmp(b));
 
-        let pb = ProgressBar::new(files.len() as u64);
-        pb.set_style(ProgressStyle::with_template("[{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} cases ({eta})  ")
-            .unwrap()
-            .progress_chars("#>-"));
-
-        let ps = files
-            .par_iter()
-            .progress_with(pb)
-            .map(|entry| {
-                test_single_case(exec_config, entry.clone().into_path(), &out_folder, &re)
-            });
-        ps.collect::<Vec<Result<(PathBuf, i64)>>>()
-    });
+    let mut results = run_test_multi_case(exec_config, in_files, &out_folder, &re)?;
 
     println!("---------result-----------");
-
-    let mut results = results
-        .into_iter()
-        .collect::<Result<Vec<_>, _>>()
-        .with_context(|| format!("failed in some case"))?;
 
     results.sort_by(|a, b| (a.0).cmp(&(b.0)));
 
@@ -65,7 +43,40 @@ pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBu
     Ok(())
 }
 
-fn test_single_case(
+fn run_test_multi_case(
+    exec_config: &ExecConfig,
+    in_files: Vec<PathBuf>,
+    out_folder: &PathBuf,
+    score_regex: &Regex,
+) -> Result<Vec<(PathBuf, i64)>> {
+    let th_pool = ThreadPoolBuilder::new()
+        .num_threads(4)
+        .build()
+        .with_context(|| format!("could not build thread pool"))?;
+
+    let results = th_pool.install(|| {
+        let pb = ProgressBar::new(in_files.len() as u64);
+        pb.set_style(
+            ProgressStyle::with_template(
+                "[{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} cases ({eta})  ",
+            )
+            .unwrap()
+            .progress_chars("#>-"),
+        );
+
+        let ps = in_files.par_iter().progress_with(pb).map(|entry| {
+            run_test_single_case(exec_config, entry.clone(), &out_folder, &score_regex)
+        });
+        ps.collect::<Vec<Result<(PathBuf, i64)>>>()
+    });
+
+    results
+        .into_iter()
+        .collect::<Result<Vec<_>, _>>()
+        .with_context(|| format!("failed in some case"))
+}
+
+fn run_test_single_case(
     exec_config: &ExecConfig,
     in_file: PathBuf,
     out_folder: &PathBuf,
