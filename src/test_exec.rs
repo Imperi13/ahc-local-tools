@@ -35,10 +35,23 @@ pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBu
         println!("{} : {}", input_path.to_str().unwrap(), score);
     }
 
+    let max_case = results.iter().max_by(|a, b| (a.1).cmp(&(b.1))).unwrap();
+    let min_case = results.iter().min_by(|a, b| (a.1).cmp(&(b.1))).unwrap();
+
     println!("score sum : {}", score_sum);
     println!(
         "score ave : {}",
         (score_sum as f64) / (results.len() as f64)
+    );
+    println!(
+        "max case `{}` : {}",
+        max_case.0.to_str().unwrap(),
+        max_case.1
+    );
+    println!(
+        "min case `{}` : {}",
+        min_case.0.to_str().unwrap(),
+        min_case.1
     );
     Ok(())
 }
