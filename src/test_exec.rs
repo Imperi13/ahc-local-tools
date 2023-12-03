@@ -8,6 +8,7 @@ use crate::config::ExecConfig;
 use std::fs::File;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::time::Duration;
 
 pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBuf) -> Result<()> {
     let re =
@@ -69,6 +70,7 @@ fn run_test_multi_case(
 
     let results = th_pool.install(|| {
         let pb = ProgressBar::new(in_files.len() as u64);
+        pb.enable_steady_tick(Duration::new(1, 0));
         pb.set_style(
             ProgressStyle::with_template(
                 "[{elapsed_precise}] [{wide_bar:.cyan/blue}] {pos}/{len} cases ({eta})  ",
