@@ -10,7 +10,12 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::time::Duration;
 
-pub fn test_all(exec_config: &ExecConfig, in_folder: PathBuf, out_folder: PathBuf) -> Result<()> {
+pub fn test_all(
+    exec_config: &ExecConfig,
+    in_folder: PathBuf,
+    out_folder: PathBuf,
+    _best_result_file: Option<PathBuf>,
+) -> Result<()> {
     let re =
         Regex::new(r"Score = (\d+)").with_context(|| format!("could not build regex instance"))?;
 

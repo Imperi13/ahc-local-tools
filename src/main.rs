@@ -23,6 +23,8 @@ enum Subcommands {
     TestAll {
         in_folder: PathBuf,
         out_folder: PathBuf,
+        #[clap(long="best-result-file")]
+        best_result_file: Option<PathBuf>,
     },
 }
 
@@ -36,7 +38,8 @@ fn main() -> Result<()> {
         Subcommands::TestAll {
             in_folder,
             out_folder,
-        } => test_all(&config.exec_config, in_folder, out_folder)?,
+            best_result_file,
+        } => test_all(&config.exec_config, in_folder, out_folder,best_result_file)?,
     };
 
     Ok(())
