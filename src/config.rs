@@ -45,48 +45,40 @@ impl Default for ExecConfig {
     }
 }
 
+pub fn initialize_config() -> Result<()> {
+    todo!()
+}
+
 pub fn load_config(config_file: Option<PathBuf>) -> Result<Config> {
-    match config_file {
-        Some(ref config_path) => {
-            let config_toml_str = fs::read_to_string(config_path).with_context(|| {
-                format!(
-                    "could not read config-file `{}`",
-                    config_path.to_str().unwrap()
-                )
-            })?;
-
-            let config: Config = toml::from_str(&config_toml_str).with_context(|| {
-                format!(
-                    "could not parse config toml `{}`",
-                    config_path.to_str().unwrap()
-                )
-            })?;
-
-            Ok(config)
-        }
+    let config_path = match config_file {
+        Some(e) => e,
         None => {
             let default_config_path = PathBuf::from("./.ahc-local-tools/config.toml");
-
-            if default_config_path.is_file() {
-                let config_toml_str =
-                    fs::read_to_string(&default_config_path).with_context(|| {
-                        format!(
-                            "could not read config-file `{}`",
-                            default_config_path.to_str().unwrap()
-                        )
-                    })?;
-
-                let config: Config = toml::from_str(&config_toml_str).with_context(|| {
+            if !default_config_path.is_file() {
+                initialize_config().with_context(|| {
                     format!(
-                        "could not parse config toml `{}`",
+                        "could not make config file `{}`",
                         default_config_path.to_str().unwrap()
                     )
                 })?;
-
-                Ok(config)
-            } else {
-                Ok(Config::default())
             }
+            default_config_path
         }
-    }
+    };
+
+    let config_toml_str = fs::read_to_string(&config_path).with_context(|| {
+        format!(
+            "could not read config-file `{}`",
+            config_path.to_str().unwrap()
+        )
+    })?;
+
+    let config: Config = toml::from_str(&config_toml_str).with_context(|| {
+        format!(
+            "could not parse config toml `{}`",
+            config_path.to_str().unwrap()
+        )
+    })?;
+
+    Ok(config)
 }
