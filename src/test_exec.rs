@@ -33,15 +33,24 @@ pub fn print_result(mut results: Vec<(PathBuf, i64)>) -> Result<()> {
     results.sort_by(|a, b| (a.0).cmp(&(b.0)));
 
     let mut score_sum = 0;
+    let mut log_score_sum = 0.0;
 
     for (input_path, score) in results.iter() {
+        let log_score = f64::log2(score.clone() as f64);
         score_sum += score;
-        println!("{} : {}", input_path.to_str().unwrap(), score);
+        log_score_sum += log_score;
+        println!(
+            "{} : {} (log2 {})",
+            input_path.to_str().unwrap(),
+            score,
+            log_score
+        );
     }
 
     let max_case = results.iter().max_by(|a, b| (a.1).cmp(&(b.1))).unwrap();
     let min_case = results.iter().min_by(|a, b| (a.1).cmp(&(b.1))).unwrap();
 
+    println!("log score sum : {}", log_score_sum);
     println!("score sum : {}", score_sum);
     println!(
         "score ave : {}",
